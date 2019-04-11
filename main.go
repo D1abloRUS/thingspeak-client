@@ -2,18 +2,19 @@ package main
 
 import (
 	"encoding/json"
-	"net/http"
-	"time"
-	"log"
-	"io/ioutil"
 	"fmt"
-	"github.com/kelseyhightower/envconfig"
+	"io/ioutil"
+	"log"
+	"net/http"
 	"strconv"
+	"time"
+
+	"github.com/kelseyhightower/envconfig"
 )
 
 type Stats struct {
-	T1 []int
-	T2 []int
+	T1     []int
+	T2     []int
 	T1_mon int
 	T2_mon int
 }
@@ -61,11 +62,11 @@ type Thingspeak_field3 struct {
 }
 
 type Enviroment struct {
-	Url         string
-	Channel     int
-	T1_Field    int
-	T2_Field	int
-	ApiKey      string
+	Url      string
+	Channel  int
+	T1_Field int
+	T2_Field int
+	ApiKey   string
 }
 
 func main() {
@@ -81,18 +82,18 @@ func get_kwt(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err.Error())
 	}
 
-    date_start, date_end := get_date("old")
-    t1_start := makerequest(e.Url,e.Channel,e.T1_Field,e.ApiKey,date_start,date_end)
-    t2_start := makerequest(e.Url,e.Channel,e.T2_Field,e.ApiKey,date_start,date_end)
+	date_start, date_end := get_date("old")
+	t1_start := makerequest(e.Url, e.Channel, e.T1_Field, e.ApiKey, date_start, date_end)
+	t2_start := makerequest(e.Url, e.Channel, e.T2_Field, e.ApiKey, date_start, date_end)
 	date_start, date_end = get_date("now")
-    t1_end := makerequest(e.Url,e.Channel,e.T1_Field,e.ApiKey,date_start,date_end)
-	t2_end := makerequest(e.Url,e.Channel,e.T2_Field,e.ApiKey,date_start,date_end)
+	t1_end := makerequest(e.Url, e.Channel, e.T1_Field, e.ApiKey, date_start, date_end)
+	t2_end := makerequest(e.Url, e.Channel, e.T2_Field, e.ApiKey, date_start, date_end)
 
 	t1_mon := parse("T1", t1_end) - parse("T1", t1_start)
 	t2_mon := parse("T2", t2_end) - parse("T2", t2_start)
 
-	stats := Stats{ T1:[]int{parse("T1", t1_start), parse("T1", t1_end)},
-	T2:[]int{parse("T2", t2_start), parse("T2", t2_end)}, T1_mon: t1_mon, T2_mon: t2_mon}
+	stats := Stats{T1: []int{parse("T1", t1_start), parse("T1", t1_end)},
+		T2: []int{parse("T2", t2_start), parse("T2", t2_end)}, T1_mon: t1_mon, T2_mon: t2_mon}
 
 	js, err := json.Marshal(stats)
 	if err != nil {
@@ -107,7 +108,7 @@ func get_kwt(w http.ResponseWriter, r *http.Request) {
 }
 
 func makerequest(thingspeak_url string, channel int, field int, api_key string, date_start string, date_end string) []byte {
-	url:= fmt.Sprintf("%s/channels/%d/fields/%d.json?api_key=%s&start=%s&end=%s",thingspeak_url,channel,field,api_key,date_start,date_end)
+	url := fmt.Sprintf("%s/channels/%d/fields/%d.json?api_key=%s&start=%s&end=%s", thingspeak_url, channel, field, api_key, date_start, date_end)
 
 	timeout := time.Duration(5 * time.Second)
 	client := http.Client{
@@ -124,7 +125,6 @@ func makerequest(thingspeak_url string, channel int, field int, api_key string, 
 	if err != nil {
 		log.Fatalln(err)
 	}
-
 	return body
 }
 
@@ -135,7 +135,7 @@ func parse(t_zone string, resp []byte) int {
 		if err != nil {
 			log.Fatalln(err)
 		}
-		t1,_ := strconv.ParseFloat(t.Feeds[0].Field2, 64)
+		t1, _ := strconv.ParseFloat(t.Feeds[0].Field2, 64)
 		return int(t1)
 	} else {
 		var t = Thingspeak_field3{}
@@ -143,7 +143,7 @@ func parse(t_zone string, resp []byte) int {
 		if err != nil {
 			log.Fatalln(err)
 		}
-		t2,_ := strconv.ParseFloat(t.Feeds[0].Field3, 64)
+		t2, _ := strconv.ParseFloat(t.Feeds[0].Field3, 64)
 		return int(t2)
 	}
 }
@@ -153,7 +153,7 @@ func get_date(d string) (string, string) {
 	if d == "old" {
 		start := time.Date(t.Year(), t.Month(), 25, 11, 0, 0, 0, time.UTC)
 		oneMonthAgoStart := start.AddDate(0, -1, 0)
-		oneMonthAgoEnd := oneMonthAgoStart.Add(5 * time.Minute)
+		oneMonthAgoEnd := oneMonthAgoStart.Add(600 * time.Minute)
 		return oneMonthAgoStart.Format("2006-01-02 15:04:05"), oneMonthAgoEnd.Format("2006-01-02 15:04:05")
 	} else {
 		nowStart := t.Add(time.Duration(-5) * time.Minute)
